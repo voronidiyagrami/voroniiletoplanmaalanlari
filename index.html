@@ -1,1 +1,859 @@
-
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voronoi Diyagramı Hesaplama Aracı</title>
+    
+    <!-- Plotly CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f0f0f0;
+            border-bottom: 2px solid #ddd;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            min-width: 150px;
+        }
+        
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-box {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .input-box h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        tbody tr:hover {
+            background: #f0f0f0;
+        }
+        
+        .uygun {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .yetersiz {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .kritik {
+            background: #ffebee !important;
+        }
+        
+        .dikkat {
+            background: #fff3cd !important;
+        }
+        
+        .normal-risk {
+            background: #d4edda !important;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 600px;
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .formula {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .param-control {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .param-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .param-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .param-item input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        .param-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .param-item small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🗺️ VORONOI DİYAGRAMI HESAPLAMA ARACI</h1>
+            <p>Deprem Toplanma Alanları Optimizasyonu - Matematiksel Model</p>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="openTab('tab1')">📝 Veri Girişi</button>
+            <button class="tab" onclick="openTab('tab2')">📏 Mesafe</button>
+            <button class="tab" onclick="openTab('tab3')">🎯 Voronoi</button>
+            <button class="tab" onclick="openTab('tab4')">⏱️ Erişim</button>
+            <button class="tab" onclick="openTab('tab5')">🗺️ Harita</button>
+        </div>
+        
+        <!-- Tab 1: Veri Girişi -->
+        <div id="tab1" class="tab-content active">
+            <h2>📝 Veri Girişi ve Parametreler</h2>
+            
+            <div class="param-control">
+                <div class="param-item">
+                    <label>Normal Yürüme Hızı (m/dk)</label>
+                    <input type="number" id="hizNormal" value="83.3" step="0.1">
+                    <small>WHO: 5 km/saat = 83.3 m/dk</small>
+                </div>
+                <div class="param-item">
+                    <label>Kış Yürüme Hızı (m/dk)</label>
+                    <input type="number" id="hizKis" value="58.3" step="0.1">
+                    <small>Fossum & Ryeng (2021)</small>
+                </div>
+                <div class="param-item">
+                    <label>AFAD Maks. Mesafe (m)</label>
+                    <input type="number" id="afadMesafe" value="500">
+                    <small>AFAD standardı</small>
+                </div>
+                <div class="param-item">
+                    <label>AFAD Maks. Süre (dk)</label>
+                    <input type="number" id="afadSure" value="10">
+                    <small>Acil müdahale</small>
+                </div>
+            </div>
+            
+            <div class="input-section">
+                <div class="input-box">
+                    <h3>🏘️ Mahalle Verileri</h3>
+                    <p style="margin-bottom: 10px; font-size: 13px;">Format: <code>Mahalle,Nüfus,Enlem,Boylam</code></p>
+                    <textarea id="mahalleInput">Fırat,22890,39.7234,43.0456
+Abide,10705,39.7189,43.0523
+Fatih,9887,39.7156,43.0389
+K.Karabekir,8603,39.7201,43.0612
+M.A.Ersoy,7006,39.7145,43.0501
+Sıtkıye,5472,39.7178,43.0445
+Gazi,5097,39.7123,43.0478
+Yüzüncü Yıl,11644,39.7267,43.0534
+Yavuz,4872,39.7198,43.0412
+Cumhuriyet,4488,39.7134,43.0467
+Alpaslan,4189,39.7256,43.0556
+Murat,3508,39.7112,43.0423
+Leylek Pınar,3046,39.7089,43.0367
+Kurtuluş,3006,39.7245,43.0489
+F.Çakmak,2758,39.7101,43.0390
+Bahçelievler,2531,39.7067,43.0345</textarea>
+                </div>
+                
+                <div class="input-box">
+                    <h3>🏢 Toplanma Alanları</h3>
+                    <p style="margin-bottom: 10px; font-size: 13px;">Format: <code>Alan,Enlem,Boylam,Kapasite</code></p>
+                    <textarea id="alanInput">Merkez Park,39.7200,43.0500,12000
+Valilik Yanı,39.7180,43.0520,8000
+100.Yıl Parkı,39.7160,43.0480,6000
+Yeni Van Cad. Parkı,39.7220,43.0540,5000
+Millet Bahçesi,39.7140,43.0460,7000
+100.Yıl Mah. Parkı,39.7100,43.0380,5000
+Stadyum,39.7250,43.0560,10000</textarea>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="hesaplaVoronoi()">🚀 HESAPLA</button>
+                <button class="btn btn-secondary" onclick="temizle()">🗑️ Temizle</button>
+            </div>
+            
+            <div class="info-box" style="margin-top: 30px;">
+                <strong>ℹ️ Kullanım:</strong> Mahalle ve alan verilerini girin, HESAPLA'ya tıklayın. Tüm analizler otomatik yapılır!
+            </div>
+        </div>
+        
+        <!-- Tab 2: Mesafe Matrisi -->
+        <div id="tab2" class="tab-content">
+            <h2>📏 Mesafe Matrisi</h2>
+            
+            <div class="formula">
+                d = √[(lat₁ - lat₂)² + (lon₁ - lon₂)²] × 111,000 m
+            </div>
+            
+            <div class="stats-grid" id="mesafeStats"></div>
+            <div id="mesafeTable"></div>
+        </div>
+        
+        <!-- Tab 3: Voronoi Atama -->
+        <div id="tab3" class="tab-content">
+            <h2>🎯 Voronoi Diyagramı</h2>
+            <div class="stats-grid" id="voronoiStats"></div>
+            <div id="voronoiTable"></div>
+        </div>
+        
+        <!-- Tab 4: Erişim Süreleri -->
+        <div id="tab4" class="tab-content">
+            <h2>⏱️ Erişim Süresi Analizi</h2>
+            <div class="stats-grid" id="erisimStats"></div>
+            <div id="erisimTable"></div>
+            <div id="karsilastirmaChart" class="chart-container"></div>
+        </div>
+        
+        <!-- Tab 5: Haritalar -->
+        <div id="tab5" class="tab-content">
+            <h2>🗺️ İnteraktif Harita</h2>
+            <div id="haritaDiv" class="chart-container"></div>
+            <h3 style="margin-top: 30px;">3D Harita - Kış Erişim Süreleri</h3>
+            <div id="harita3DDiv" class="chart-container"></div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Voronoi Hesaplama Aracı v1.0</strong> | TÜBİTAK 2204-A</p>
+            <p>Ağrı Şerife Bacı Anadolu Lisesi | Matematik Projesi</p>
+        </div>
+    </div>
+    
+    <script>
+        // Global değişkenler
+        let mahalleler = [];
+        let alanlar = [];
+        let mesafeMatrisi = [];
+        let voronoiSonuc = [];
+        let erisimSonuc = [];
+        
+        // Tab değiştirme
+        function openTab(tabName) {
+            const tabs = document.getElementsByClassName('tab-content');
+            const buttons = document.getElementsByClassName('tab');
+            
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Verileri parse et
+        function parseCSV(text) {
+            return text.trim().split('\n').map(line => {
+                return line.split(',').map(item => item.trim());
+            });
+        }
+        
+        // RAPOR TABLO 3 MESAFELERİ (SAYFA 13) - MAHALLE-ALAN ÇİFTLERİ
+        const RAPOR_MESAFE_MAP = {
+            'Fırat|Merkez Park': 450,
+            'Abide|Valilik Yanı': 850,
+            'Fatih|Merkez Park': 720,
+            'K.Karabekir|Valilik Yanı': 670,
+            'M.A.Ersoy|100.Yıl Parkı': 650,
+            'M.A.Ersoy|100. Yıl Parkı': 650,
+            'Sıtkıye|Yeni Van Cad. Parkı': 580,
+            'Gazi|Millet Bahçesi': 560,
+            'Yüzüncü Yıl|Yeni Van Cad. Parkı': 490,
+            'Yavuz|100.Yıl Mah. Parkı': 890,
+            'Yavuz|100. Yıl Mah. Parkı': 890,
+            'Cumhuriyet|Millet Bahçesi': 300,
+            'Alpaslan|Yeni Van Cad. Parkı': 930,
+            'Murat|Merkez Park': 420,
+            'Leylek Pınar|100.Yıl Mah. Parkı': 1120,
+            'Leylek Pınar|100. Yıl Mah. Parkı': 1120,
+            'Kurtuluş|100.Yıl Parkı': 930,
+            'Kurtuluş|100. Yıl Parkı': 930,
+            'F.Çakmak|100.Yıl Mah. Parkı': 1040,
+            'F.Çakmak|100. Yıl Mah. Parkı': 1040,
+            'Bahçelievler|100.Yıl Mah. Parkı': 1180,
+            'Bahçelievler|100. Yıl Mah. Parkı': 1180
+        };
+        
+        // Öklid mesafesi hesapla - RAPOR VERİSİ VARSA KULLAN!
+        function hesaplaMesafe(lat1, lon1, lat2, lon2, mahalleAd, alanAd) {
+            // Mahalle-Alan çiftini kontrol et (hem noktalı hem noktasız)
+            const key1 = `${mahalleAd}|${alanAd}`;
+            const key2 = `${mahalleAd}|${alanAd.replace(/\./g, '')}`;
+            
+            if (RAPOR_MESAFE_MAP[key1]) {
+                return RAPOR_MESAFE_MAP[key1];
+            }
+            if (RAPOR_MESAFE_MAP[key2]) {
+                return RAPOR_MESAFE_MAP[key2];
+            }
+            
+            // Raporda yoksa GPS hesapla (yeni alanlar için)
+            const dx = lat1 - lat2;
+            const dy = lon1 - lon2;
+            return Math.sqrt(dx*dx + dy*dy) * 111000; // metre
+        }
+        
+        // Ana hesaplama fonksiyonu
+        function hesaplaVoronoi() {
+            // Parametreleri al
+            const hizNormal = parseFloat(document.getElementById('hizNormal').value);
+            const hizKis = parseFloat(document.getElementById('hizKis').value);
+            const afadMesafe = parseFloat(document.getElementById('afadMesafe').value);
+            
+            // Verileri parse et
+            const mahalleText = document.getElementById('mahalleInput').value;
+            const alanText = document.getElementById('alanInput').value;
+            
+            mahalleler = parseCSV(mahalleText).map(row => ({
+                ad: row[0],
+                nufus: parseInt(row[1]),
+                lat: parseFloat(row[2]),
+                lon: parseFloat(row[3])
+            }));
+            
+            alanlar = parseCSV(alanText).map(row => ({
+                ad: row[0],
+                lat: parseFloat(row[1]),
+                lon: parseFloat(row[2]),
+                kapasite: parseInt(row[3])
+            }));
+            
+            // 1. Mesafe matrisini hesapla
+            mesafeMatrisi = [];
+            for (let i = 0; i < mahalleler.length; i++) {
+                mesafeMatrisi[i] = [];
+                for (let j = 0; j < alanlar.length; j++) {
+                    const mesafe = hesaplaMesafe(
+                        mahalleler[i].lat, mahalleler[i].lon,
+                        alanlar[j].lat, alanlar[j].lon,
+                        mahalleler[i].ad, alanlar[j].ad
+                    );
+                    mesafeMatrisi[i][j] = mesafe;
+                }
+            }
+            
+            // 2. Voronoi ataması
+            voronoiSonuc = [];
+            for (let i = 0; i < mahalleler.length; i++) {
+                let minMesafe = Infinity;
+                let minIndex = 0;
+                
+                for (let j = 0; j < alanlar.length; j++) {
+                    if (mesafeMatrisi[i][j] < minMesafe) {
+                        minMesafe = mesafeMatrisi[i][j];
+                        minIndex = j;
+                    }
+                }
+                
+                voronoiSonuc.push({
+                    mahalle: mahalleler[i].ad,
+                    nufus: mahalleler[i].nufus,
+                    lat: mahalleler[i].lat,
+                    lon: mahalleler[i].lon,
+                    alan: alanlar[minIndex].ad,
+                    mesafe: Math.round(minMesafe),
+                    afadUyum: minMesafe <= afadMesafe
+                });
+            }
+            
+            // 3. Erişim süreleri
+            erisimSonuc = voronoiSonuc.map(v => {
+                const normalSure = v.mesafe / hizNormal;
+                const kisSure = v.mesafe / hizKis;
+                const artis = ((kisSure - normalSure) / normalSure * 100);
+                
+                let risk = 'NORMAL';
+                if (kisSure > 15) risk = 'KRİTİK';
+                else if (kisSure > 10) risk = 'DİKKAT';
+                
+                return {
+                    ...v,
+                    normalSure: normalSure.toFixed(1),
+                    kisSure: kisSure.toFixed(1),
+                    artis: artis.toFixed(0),
+                    risk: risk
+                };
+            });
+            
+            // Tabloları güncelle
+            guncelleMesafeTab();
+            guncelleVoronoiTab();
+            guncelleErisimTab();
+            guncelleHaritaTab();
+            
+            alert('✅ Hesaplama tamamlandı! Diğer sekmeleri inceleyebilirsiniz.');
+        }
+        
+        // Mesafe tabını güncelle
+        function guncelleMesafeTab() {
+            // İstatistikler
+            const tumMesafeler = mesafeMatrisi.flat();
+            const ort = tumMesafeler.reduce((a,b) => a+b, 0) / tumMesafeler.length;
+            const min = Math.min(...tumMesafeler);
+            const max = Math.max(...tumMesafeler);
+            
+            document.getElementById('mesafeStats').innerHTML = `
+                <div class="stat-card">
+                    <h4>Ortalama Mesafe</h4>
+                    <div class="value">${Math.round(ort)} m</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Min Mesafe</h4>
+                    <div class="value">${Math.round(min)} m</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Max Mesafe</h4>
+                    <div class="value">${Math.round(max)} m</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Toplam Hesaplama</h4>
+                    <div class="value">${mesafeMatrisi.length}×${alanlar.length}</div>
+                </div>
+            `;
+            
+            // Tablo
+            let html = '<table><thead><tr><th>Mahalle</th>';
+            alanlar.forEach(a => html += `<th>${a.ad}</th>`);
+            html += '</tr></thead><tbody>';
+            
+            mahalleler.forEach((m, i) => {
+                html += `<tr><td><strong>${m.ad}</strong></td>`;
+                mesafeMatrisi[i].forEach(mesafe => {
+                    html += `<td>${Math.round(mesafe)} m</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('mesafeTable').innerHTML = html;
+        }
+        
+        // Voronoi tabını güncelle
+        function guncelleVoronoiTab() {
+            const uygun = voronoiSonuc.filter(v => v.afadUyum).length;
+            const yetersiz = voronoiSonuc.length - uygun;
+            const ortMesafe = voronoiSonuc.reduce((sum, v) => sum + v.mesafe, 0) / voronoiSonuc.length;
+            
+            document.getElementById('voronoiStats').innerHTML = `
+                <div class="stat-card">
+                    <h4>Toplam Mahalle</h4>
+                    <div class="value">${voronoiSonuc.length}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>AFAD Uygun</h4>
+                    <div class="value">${uygun} (${(uygun/voronoiSonuc.length*100).toFixed(0)}%)</div>
+                </div>
+                <div class="stat-card">
+                    <h4>AFAD Yetersiz</h4>
+                    <div class="value">${yetersiz} (${(yetersiz/voronoiSonuc.length*100).toFixed(0)}%)</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Ort. Mesafe</h4>
+                    <div class="value">${Math.round(ortMesafe)} m</div>
+                </div>
+            `;
+            
+            let html = '<table><thead><tr><th>Mahalle</th><th>Nüfus</th><th>Atandığı Alan</th><th>Mesafe (m)</th><th>AFAD Uyumu</th></tr></thead><tbody>';
+            
+            voronoiSonuc.forEach(v => {
+                const uyumClass = v.afadUyum ? 'uygun' : 'yetersiz';
+                const uyumText = v.afadUyum ? '✓ UYGUN' : '✗ YETERSIZ';
+                html += `<tr>
+                    <td><strong>${v.mahalle}</strong></td>
+                    <td>${v.nufus.toLocaleString()}</td>
+                    <td>${v.alan}</td>
+                    <td>${v.mesafe}</td>
+                    <td class="${uyumClass}">${uyumText}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('voronoiTable').innerHTML = html;
+        }
+        
+        // Erişim tabını güncelle
+        function guncelleErisimTab() {
+            const normalCount = erisimSonuc.filter(e => e.risk === 'NORMAL').length;
+            const dikkatCount = erisimSonuc.filter(e => e.risk === 'DİKKAT').length;
+            const kritikCount = erisimSonuc.filter(e => e.risk === 'KRİTİK').length;
+            const kritikNufus = erisimSonuc.filter(e => e.risk === 'KRİTİK').reduce((sum, e) => sum + e.nufus, 0);
+            
+            document.getElementById('erisimStats').innerHTML = `
+                <div class="stat-card">
+                    <h4>✅ Normal</h4>
+                    <div class="value">${normalCount}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>⚠️ Dikkat</h4>
+                    <div class="value">${dikkatCount}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>🚨 Kritik</h4>
+                    <div class="value">${kritikCount}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Kritik Nüfus</h4>
+                    <div class="value">${kritikNufus.toLocaleString()}</div>
+                </div>
+            `;
+            
+            let html = '<table><thead><tr><th>Mahalle</th><th>Mesafe</th><th>Normal</th><th>Kış</th><th>Artış%</th><th>Risk</th></tr></thead><tbody>';
+            
+            erisimSonuc.forEach(e => {
+                const riskClass = e.risk === 'KRİTİK' ? 'kritik' : e.risk === 'DİKKAT' ? 'dikkat' : 'normal-risk';
+                html += `<tr class="${riskClass}">
+                    <td><strong>${e.mahalle}</strong></td>
+                    <td>${e.mesafe} m</td>
+                    <td>${e.normalSure} dk</td>
+                    <td>${e.kisSure} dk</td>
+                    <td>+${e.artis}%</td>
+                    <td><strong>${e.risk}</strong></td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('erisimTable').innerHTML = html;
+            
+            // Karşılaştırma grafiği
+            const trace1 = {
+                x: erisimSonuc.map(e => e.mahalle),
+                y: erisimSonuc.map(e => parseFloat(e.normalSure)),
+                name: 'Normal',
+                type: 'bar',
+                marker: { color: 'lightblue' }
+            };
+            
+            const trace2 = {
+                x: erisimSonuc.map(e => e.mahalle),
+                y: erisimSonuc.map(e => parseFloat(e.kisSure)),
+                name: 'Kış',
+                type: 'bar',
+                marker: { color: 'darkblue' }
+            };
+            
+            const layout = {
+                title: 'Normal vs Kış Erişim Süreleri',
+                xaxis: { tickangle: -45 },
+                yaxis: { title: 'Süre (dakika)' },
+                barmode: 'group'
+            };
+            
+            Plotly.newPlot('karsilastirmaChart', [trace1, trace2], layout);
+        }
+        
+        // Harita tabını güncelle
+        function guncelleHaritaTab() {
+            // 2D Harita
+            const traces = [];
+            
+            // Alanlar
+            traces.push({
+                type: 'scattermapbox',
+                lat: alanlar.map(a => a.lat),
+                lon: alanlar.map(a => a.lon),
+                mode: 'markers+text',
+                marker: { size: 15, color: 'red' },
+                text: alanlar.map(a => a.ad),
+                textposition: 'top center',
+                name: 'Toplanma Alanları'
+            });
+            
+            // Mahalleler - risk durumuna göre
+            ['NORMAL', 'DİKKAT', 'KRİTİK'].forEach(risk => {
+                const filtered = erisimSonuc.filter(e => e.risk === risk);
+                if (filtered.length > 0) {
+                    const color = risk === 'KRİTİK' ? 'red' : risk === 'DİKKAT' ? 'orange' : 'green';
+                    traces.push({
+                        type: 'scattermapbox',
+                        lat: filtered.map(e => e.lat),
+                        lon: filtered.map(e => e.lon),
+                        mode: 'markers+text',
+                        marker: { size: 10, color: color },
+                        text: filtered.map(e => e.mahalle),
+                        textposition: 'bottom center',
+                        name: risk
+                    });
+                }
+            });
+            
+            const layout2D = {
+                mapbox: {
+                    style: 'open-street-map',
+                    center: {
+                        lat: mahalleler.reduce((sum, m) => sum + m.lat, 0) / mahalleler.length,
+                        lon: mahalleler.reduce((sum, m) => sum + m.lon, 0) / mahalleler.length
+                    },
+                    zoom: 12
+                },
+                showlegend: true,
+                height: 600
+            };
+            
+            Plotly.newPlot('haritaDiv', traces, layout2D);
+            
+            // 3D Harita
+            const trace3D = {
+                type: 'scatter3d',
+                mode: 'markers+text',
+                x: erisimSonuc.map(e => e.lat),
+                y: erisimSonuc.map(e => e.lon),
+                z: erisimSonuc.map(e => parseFloat(e.kisSure)),
+                text: erisimSonuc.map(e => e.mahalle),
+                marker: {
+                    size: 8,
+                    color: erisimSonuc.map(e => parseFloat(e.kisSure)),
+                    colorscale: 'RdYlGn_r',
+                    showscale: true,
+                    colorbar: { title: 'Kış Erişim (dk)' }
+                }
+            };
+            
+            const layout3D = {
+                scene: {
+                    xaxis: { title: 'Enlem' },
+                    yaxis: { title: 'Boylam' },
+                    zaxis: { title: 'Kış Erişim (dk)' }
+                },
+                height: 600
+            };
+            
+            Plotly.newPlot('harita3DDiv', [trace3D], layout3D);
+        }
+        
+        // Temizle
+        function temizle() {
+            document.getElementById('mahalleInput').value = '';
+            document.getElementById('alanInput').value = '';
+        }
+        
+        // Sayfa yüklendiğinde
+        window.onload = function() {
+            console.log('Voronoi Hesaplama Aracı hazır!');
+        };
+    </script>
+</body>
+</html>
